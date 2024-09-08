@@ -1,6 +1,6 @@
 package com.wallet.monnify.wallet.services;
 
-import com.wallet.monnify.config.AppConfig;
+import com.wallet.monnify.config.AppConfigs;
 import com.wallet.monnify.user.data.model.User;
 import com.wallet.monnify.user.data.repository.UserRepository;
 import com.wallet.monnify.utils.Constants;
@@ -26,7 +26,7 @@ public class AccountImplementation implements IAccount{
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
-    private final AppConfig appConfig;
+    private final AppConfigs appConfig;
 
 
     @Override
