@@ -1,47 +1,32 @@
 package com.wallet.monnify.wallet.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.wallet.monnify.wallet.data.model.BankAccount;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Getter @Setter @ToString
 public class ReservedAccountResponse {
-//     "contractCode": "7059707855",
-//             "accountReference": "abc1niui--23",
-//             "accountName": "Test01-Tes",
-//             "currencyCode": "NGN",
-//             "customerEmail": "test@tester.com",
-//             "customerName": "mao  Zhang",
-//             "accounts": [
-//    {
-//        "bankCode": "035",
-//            "bankName": "Wema bank",
-//            "accountNumber": "5000588053",
-//            "accountName": "Tes"
-//    },
-//    {
-//        "bankCode": "232",
-//            "bankName": "Sterling bank",
-//            "accountNumber": "6001363175",
-//            "accountName": "Tes"
-//    }
-//        ],
-//                "collectionChannel": "RESERVED_ACCOUNT",
-//                "reservationReference": "8MD1E79P4LD94N6E2VNJ",
-//                "reservedAccountType": "GENERAL",
-//                "status": "ACTIVE",
-//                "createdOn": "2022-07-31 10:08:41.0",
-//                "contract": {
-//        "name": "Default Contract",
-//                "code": "7059707855",
-//                "description": null
-//    },
-//            "transactionCount": 0,
-//            "incomeSplitConfig": [
-//    {
-//        "subAccountCode": "MFY_SUB_762212281785",
-//            "feePercentage": 10.5,
-//            "feeBearer": true,
-//            "splitPercentage": 20,
-//            "reservedAccountConfigCode": "HRCNXDSAYX"
-//    }
-//        ],
-//                "bvn": "21212121212",
-//                "restrictPaymentSource": true
-//}
+    @JsonProperty(value = "contractCode")
+    private String contractCode;
+    @JsonProperty(value = "accountReference")
+    private String accountReference;
+    private String accountName;
+    private String currencyCode;
+    private BigDecimal balance;
+    private String customerEmail;
+    private String customerName;
+    @JsonProperty(value = "accounts")
+    private List<BankAccount> accounts;
+    private String collectionChannel;
+    private String reservationReference;
+    private String reservedAccountType;
+    private String status;
+    private String createdOn;
+    private String bvn;
+    private String nin;
 }
