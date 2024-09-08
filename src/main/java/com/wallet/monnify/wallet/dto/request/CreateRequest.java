@@ -1,24 +1,32 @@
 package com.wallet.monnify.wallet.dto.request;
 
-public class CreateRequest {
-    private String accountName;
-    private String accountReference;
-    private String currencyCode;
-    private String contractCode;
-    private String customerEmail;
-    private String customerName;
-    private String bvn;
-    private String nin;
-    private Boolean getAllAvailableBanks;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
-//    { "accountReference": "abc123d380",
-//            "accountName": "ysbbs hsbsb nxnznq",
-//            "currencyCode": "NGN",
-//            "contractCode": "7059707855",
-//            "customerEmail": "jxbbz@qq.com",
-//            "customerName": "ysbbs hsbsb nxnznq",
-//            "bvn": "54848484888",
-//            "nin":"34848484058",
-//            "getAllAvailableBanks": true
-//    }
+import java.util.List;
+
+@Getter @Setter
+public class CreateRequest {
+    @JsonProperty
+    private String accountName; //
+    @JsonProperty
+    private String accountReference; //
+    @JsonProperty
+    private String currencyCode; //
+    @JsonProperty
+    private String contractCode; //
+    @JsonProperty
+    private String customerEmail;//
+    @JsonProperty
+    private String customerName;//
+    @JsonProperty
+    private String bvn;//
+    @JsonProperty
+    private String nin;//
+    @JsonProperty
+    private Boolean getAllAvailableBanks;
+    private String token;
+    @JsonProperty(value = "preferredBanks")
+    private List<String> preferredBanks;
 }
