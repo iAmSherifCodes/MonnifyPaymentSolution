@@ -1,6 +1,6 @@
 package com.wallet.monnify.user.services;
 
-//import com.wallet.monnify.config.AppConfig;
+import com.wallet.monnify.config.AppConfigs;
 import com.wallet.monnify.user.data.model.User;
 import com.wallet.monnify.user.data.repository.UserRepository;
 import com.wallet.monnify.user.dto.kyc.BvnRequestObject;
@@ -12,6 +12,7 @@ import com.wallet.monnify.user.dto.response.AccessTokenData;
 import com.wallet.monnify.user.dto.response.AccessTokenResponse;
 import com.wallet.monnify.user.dto.response.CreateUserResponse;
 import com.wallet.monnify.user.dto.response.SignInResponse;
+import com.wallet.monnify.utils.Constants;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -27,7 +28,7 @@ public class UserImplementation implements IUser {
 
 
     private final UserRepository userRepository;
-//    private AppConfig appConfig;
+    private final AppConfigs appConfig;
 
 
     // extract the user details from bvn using kyc platform during sign up
@@ -36,12 +37,12 @@ public class UserImplementation implements IUser {
         String email = createUserRequest.getEmail();
         boolean isPresent = userRepository.findUserByEmail(email).isPresent();
         if (isPresent) {
-            throw new Exception("Email already exists");
+            throw new Exception(Constants.EMAIL_EXISTS);
         }
         String password = createUserRequest.getPassword();
         String bvn = createUserRequest.getBvn();
 
-        BvnResponseData responseEntity = getUserDataFromBvn(bvn);
+        BvnResponseData responseEntity = getUserDataFromBvn(bvn, appConfig.getKycApiKey(), appConfig.getKycBaseUrl());
         User newUser = populateNewUser(email, password, bvn, responseEntity);
 
         userRepository.save(newUser);
@@ -63,16 +64,15 @@ public class UserImplementation implements IUser {
         return newUser;
     }
 
-    private static BvnResponseData getUserDataFromBvn(String bvn) {
+    private static BvnResponseData getUserDataFromBvn(String bvn, String token, String url) {
         String id = bvn;
         BvnRequestObject bvnRequestObject = new BvnRequestObject(id, true);
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-        httpHeaders.set("token", "waiWn30I.Wf43omqx07h5Jjy1L0EacRDiVlQHeK734DBj");
-        //appConfig.getKycApiKey());
+        httpHeaders.set("token", token);
         HttpEntity<BvnRequestObject> httpEntity = new HttpEntity<>(bvnRequestObject, httpHeaders);
-        BvnResponseObject responseEntity = restTemplate.postForObject("https://api.sandbox.youverify.co/v2/api/identity/ng/bvn", httpEntity, BvnResponseObject.class);
+        BvnResponseObject responseEntity = restTemplate.postForObject(url, httpEntity, BvnResponseObject.class);
 
         assert responseEntity != null;
         return responseEntity.getData();
@@ -83,13 +83,13 @@ public class UserImplementation implements IUser {
         String email = signInRequest.getEmail();
         String password = signInRequest.getPassword();
 
-        User foundUser= userRepository.findUserByEmail(email).orElseThrow(()->new Exception("User email not found"));
+        User foundUser= userRepository.findUserByEmail(email).orElseThrow(()->new Exception(Constants.USER_EMAIL_NOT_EXISTS));
         AccessTokenResponse apiRequest = null;
         boolean passwordMatch = foundUser.getPassword().equals(password);
         if (passwordMatch) {
             apiRequest = apiRequest();
         } else {
-            throw new Exception("Wrong password");
+            throw new Exception(Constants.WRONG_PASSWORD);
         }
         SignInResponse signInResponse = new SignInResponse();
         signInResponse.setToken(apiRequest.getAccessToken());
@@ -102,16 +102,13 @@ public class UserImplementation implements IUser {
 
     private AccessTokenResponse apiRequest(){
         //drop this in appConfig
-        String sandboxUrl = "https://sandbox.monnify.com/api/v1/auth/login";
+        String sandboxUrl = appConfig.getMonnifySignInUrl();
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        // Drop these in app config
-        String apiKey = "MK_TEST_HB7664REQY";
-        String clientSecret = "VPPNGR850N6HXKBLWQ99E12AH34WNW7S";
-        String credentials = apiKey + ":" + clientSecret;
+        String credentials = appConfig.getMonnifyApiKey()+":"+appConfig.getMonnifyApiSecretKey();
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
         httpHeaders.setBasicAuth(encodedCredentials);
         log.info("{{}}::", httpHeaders.toString());
