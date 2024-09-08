@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class AppConfig {
+public class AppConfigs {
     @Value("${youverify_base_url}")
     private String kycBaseUrl;
     @Value("${youverify_api_key}")
