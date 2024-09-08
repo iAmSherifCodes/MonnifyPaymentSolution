@@ -1,7 +1,9 @@
 package com.wallet.monnify.wallet.services;
 
+import com.wallet.monnify.config.AppConfig;
 import com.wallet.monnify.user.data.model.User;
 import com.wallet.monnify.user.data.repository.UserRepository;
+import com.wallet.monnify.utils.Constants;
 import com.wallet.monnify.wallet.data.model.Account;
 import com.wallet.monnify.wallet.data.repository.AccountRepository;
 import com.wallet.monnify.wallet.dto.request.CreateRequest;
@@ -24,16 +26,16 @@ public class AccountImplementation implements IAccount{
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final AppConfig appConfig;
 
 
     @Override
     public ReservedAccountResponse createReservedAccount(CreateRequest createRequest) throws Exception {
         createRequest.setAccountReference(generateAccountReference());
-        // Drop this in AppConfig
-        createRequest.setContractCode("2459409159");
+        createRequest.setContractCode(appConfig.getMonnifyContractCode());
         CreateResponse responseObject;
         try{
-            responseObject = makeApiRequest(createRequest);
+            responseObject = makeApiRequest(createRequest, appConfig.getMonnifyCreateAccountUrl());
         } catch (Exception e){
             throw new Exception(e.getMessage()+ "::From Api Call");
         }
@@ -56,12 +58,11 @@ public class AccountImplementation implements IAccount{
         return responseObject.getResponseBody();
     }
 
-    private static CreateResponse makeApiRequest(CreateRequest createRequest) {
+    private static CreateResponse makeApiRequest(CreateRequest createRequest, String url) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         httpHeaders.setBearerAuth(createRequest.getToken());
-        String url = "https://sandbox.monnify.com/api/v2/bank-transfer/reserved-accounts";
         HttpEntity<Object> httpEntity = new HttpEntity<>(createRequest, httpHeaders);
         log.info("{{}}::", httpEntity.toString());
         CreateResponse responseObject = restTemplate.postForObject(url, httpEntity, CreateResponse.class);
@@ -89,9 +90,9 @@ public class AccountImplementation implements IAccount{
     }
 
     private String generateAccountReference(){
-        String prefix = "MONN-";
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        String digits = "0123456789";
+        String prefix = appConfig.getAccountReferencePrefix();
+        String characters = Constants.ALPHABETS;
+        String digits = Constants.DIGITS;
 
         Random random = new Random();
         StringBuilder randomString = new StringBuilder(prefix);
@@ -109,14 +110,14 @@ public class AccountImplementation implements IAccount{
     @Override
     public ReservedAccountResponse getReservedAccount(String accountReference, String apiToken) throws Exception {
         try {
-            return makeApiRequest(accountReference, apiToken);
+            return makeApiRequest(accountReference, apiToken, appConfig.getMonnifyGetReservedAccountUrl());
         }  catch (Exception e){
             throw new Exception(e.getMessage()+ "::From Api Call");
         }
     }
 
-    private static ReservedAccountResponse makeApiRequest(String accountReference, String apiToken) {
-        String url = "https://sandbox.monnify.com/api/v2/bank-transfer/reserved-accounts/"+ accountReference;
+    private static ReservedAccountResponse makeApiRequest(String accountReference, String apiToken, String baseUrl) {
+        String url = baseUrl + accountReference;
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -131,7 +132,7 @@ public class AccountImplementation implements IAccount{
     @Override
     public BalanceResponse getAccountBalance(String accountNumber, String apiToken) throws Exception {
 //        Account foundAccount = accountRepository.findByAccountNumber(accountBalanceRequest.getAccountNumber()).orElseThrow(()->new Exception("Account Number not found"));
-        String url = "https://sandbox.monnify.com/api/v1/disbursements/wallet/balance?accountNumber="+accountNumber;
+        String url = ""+accountNumber;
 //        RestTemplate restTemplate = new RestTemplate();
 //        HttpHeaders httpHeaders = new HttpHeaders();
 //        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -141,9 +142,8 @@ public class AccountImplementation implements IAccount{
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        // Drop these in app config
-        String apiKey = "MK_TEST_HB7664REQY";
-        String clientSecret = "VPPNGR850N6HXKBLWQ99E12AH34WNW7S";
+        String apiKey = "";
+        String clientSecret = "";
         String credentials = apiKey + ":" + clientSecret;
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
         httpHeaders.setBasicAuth(encodedCredentials);
