@@ -33,6 +33,6 @@ build/
 .vscode/
 
 ### secret properties ###
-secret.properties
-/home/sherif/Documents/monnify/src/main/resources/secret.properties
-src/main/resources/secret.properties
+#secret.properties
+#/home/sherif/Documents/monnify/src/main/resources/secret.properties
+#src/main/resources/secret.properties
