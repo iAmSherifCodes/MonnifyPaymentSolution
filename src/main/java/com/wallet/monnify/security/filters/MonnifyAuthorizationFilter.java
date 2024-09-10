@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,10 +22,12 @@ import static com.wallet.monnify.utils.AppUtils.publicPath;
 import static com.wallet.monnify.utils.Constants.*;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
+
 public class MonnifyAuthorizationFilter extends OncePerRequestFilter {
-    @Override
+    @Override @Order(1)
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if( publicPath().contains(request.getServletPath())) filterChain.doFilter(request,response);
+        if( publicPath().contains(request.getServletPath()))
+            filterChain.doFilter(request,response);
         else {
             String authorizationHeader = request.getHeader(AUTHORIZATION);
 
