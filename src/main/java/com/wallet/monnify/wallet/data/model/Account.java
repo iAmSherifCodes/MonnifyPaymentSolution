@@ -1,10 +1,7 @@
 package com.wallet.monnify.wallet.data.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -12,7 +9,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Getter @Setter @Document @Builder
+@Document(value = "accounts")
+@Data
 public class Account {
     @Id
     private String id;
@@ -21,7 +19,7 @@ public class Account {
     private String bankName;
     private BigDecimal balance;
     private String currencyCode;
-    @Indexed(unique = true) @JsonProperty(value = "accountReference")
+    @JsonProperty(value = "accountReference") @Indexed(unique = true)
     private String accountReference;
     @JsonProperty(value = "contractCode")
     private String contractCode;

@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Getter @Document @Setter
+@Getter @Document(value = "users") @Setter
 public class User {
     @Id
     private String id;

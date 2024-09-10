@@ -70,22 +70,22 @@ public class AccountImplementation implements IAccount{
     }
 
     private static Account buildAccount(CreateResponse responseObject, String accountNumber, String bankName) {
-        Account newAccount = Account.builder()
-                .accountName(responseObject.getResponseBody().getAccountName())
-                .accountNumber(accountNumber)
-                .accountReference(responseObject.getResponseBody().getAccountReference())
-                .createdOn(responseObject.getResponseBody().getCreatedOn())
-                .reservedAccountType(responseObject.getResponseBody().getReservedAccountType())
-                .currencyCode(responseObject.getResponseBody().getCurrencyCode())
-                .customerEmail(responseObject.getResponseBody().getCustomerEmail())
-                .customerName(responseObject.getResponseBody().getCustomerName())
-                .collectionChannel(responseObject.getResponseBody().getCollectionChannel())
-                .reservationReference(responseObject.getResponseBody().getReservationReference())
-                .status(responseObject.getResponseBody().getStatus())
-                .bvn(responseObject.getResponseBody().getBvn())
-                .nin(responseObject.getResponseBody().getNin())
-                .bankName(bankName)
-                .build();
+        Account newAccount = new Account();
+        newAccount.setAccountName(responseObject.getResponseBody().getAccountName());
+        newAccount.setAccountNumber(accountNumber);
+        newAccount.setAccountReference(responseObject.getResponseBody().getAccountReference());
+        newAccount.setBankName(bankName);
+        newAccount.setCreatedOn(responseObject.getResponseBody().getCreatedOn());
+        newAccount.setReservedAccountType(responseObject.getResponseBody().getReservedAccountType());
+        newAccount.setCurrencyCode(responseObject.getResponseBody().getCurrencyCode());
+        newAccount.setCustomerEmail(responseObject.getResponseBody().getCustomerEmail());
+        newAccount.setCustomerName(responseObject.getResponseBody().getCustomerName());
+        newAccount.setCollectionChannel(responseObject.getResponseBody().getCollectionChannel());
+        newAccount.setReservationReference(responseObject.getResponseBody().getReservationReference());
+        newAccount.setStatus(responseObject.getResponseBody().getStatus());
+        newAccount.setBvn(responseObject.getResponseBody().getBvn());
+        newAccount.setNin(responseObject.getResponseBody().getNin());
+
         return newAccount;
     }
 

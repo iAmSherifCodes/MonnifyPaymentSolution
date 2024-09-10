@@ -30,8 +30,6 @@ public class UserImplementation implements IUser {
     private final UserRepository userRepository;
     private final AppConfigs appConfig;
 
-
-    // extract the user details from bvn using kyc platform during sign up
     @Override
     public CreateUserResponse createUser(CreateUserRequest createUserRequest) throws Exception {
         String email = createUserRequest.getEmail();

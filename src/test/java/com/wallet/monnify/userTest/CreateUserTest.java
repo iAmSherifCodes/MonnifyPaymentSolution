@@ -33,7 +33,7 @@ public class CreateUserTest {
         String bvn = "11111111111";
         CreateUserRequest createUserRequest = new CreateUserRequest();
         createUserRequest.setBvn(bvn);
-        createUserRequest.setEmail("test@test.com");
+        createUserRequest.setEmail("test@test2.com");
         createUserRequest.setPassword("password");
 
         CreateUserResponse createUserResponse = userImpl.createUser(createUserRequest);
@@ -47,7 +47,7 @@ public class CreateUserTest {
         String bvn = "11111111111";
         CreateUserRequest createUserRequest = new CreateUserRequest();
         createUserRequest.setBvn(bvn);
-        createUserRequest.setEmail("test@test.com");
+        createUserRequest.setEmail("test@test3.com");
         createUserRequest.setPassword("password");
 
         CreateUserResponse createUserResponse = userImpl.createUser(createUserRequest);
