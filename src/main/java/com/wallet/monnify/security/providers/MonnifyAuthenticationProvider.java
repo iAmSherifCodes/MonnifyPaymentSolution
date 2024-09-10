@@ -1,5 +1,6 @@
 package com.wallet.monnify.security.providers;
 
+import com.wallet.monnify.utils.AppUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,7 +21,6 @@ import static com.wallet.monnify.security.exceptions.ExceptionMessages.INVALID_C
 public class MonnifyAuthenticationProvider implements AuthenticationProvider {
 
     private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -30,7 +30,7 @@ public class MonnifyAuthenticationProvider implements AuthenticationProvider {
 
         String password = authentication.getCredentials().toString();
 
-        boolean isValidPassword = passwordEncoder.matches(password, user.getPassword());
+        boolean isValidPassword = AppUtils.passwordEncoder().matches(password, user.getPassword());
 
         if (isValidPassword){
             Collection<? extends GrantedAuthority> authorities = user.getAuthorities();
