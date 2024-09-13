@@ -6,5 +6,7 @@ public class Constants {
     public final static String ALPHABETS="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     public final static String EMAIL_EXISTS="Email already exists";
     public final static String USER_EMAIL_NOT_EXISTS="User email not found";
+    public final static String USER_NOT_FOUND="User not found";
+    public final static String ACCOUNT_NOT_FOUND="Account not found";
     public final static String WRONG_PASSWORD="Wrong password";
 }
