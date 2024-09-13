@@ -1,10 +1,14 @@
 package com.wallet.monnify.config;
 
+import lombok.Getter;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class AppConfigs {
+@Configuration @Getter
+public class AppConfig {
     @Value("${youverify_base_url}")
     private String kycBaseUrl;
     @Value("${youverify_api_key}")
@@ -25,58 +29,23 @@ public class AppConfigs {
     private String monnifySignInUrl;
     @Value("${monnify-get-reserved-url}")
     private String monnifyGetReservedAccountUrl;
+    @Value("${monnify-get-reserved-account_transaction_url}")
+    private String monnifyGetReservedAccountTransactionUrl;
     @Value("${monnify-contract-code}")
     private String monnifyContractCode;
-
-    public String getAccountReferencePrefix() {
-        return accountReferencePrefix;
-    }
-
     @Value("${account-ref-prefix}")
     private String accountReferencePrefix;
 
-    public String getMonnifyContractCode() {
-        return monnifyContractCode;
+    @Bean
+    public ModelMapper modelMapper() {
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
+                .setMatchingStrategy(MatchingStrategies.STANDARD);
+
+        return mapper;
     }
 
-    public String getKycBaseUrl() {
-        return kycBaseUrl;
-    }
-
-    public String getKycApiKey() {
-        return kycApiKey;
-    }
-
-    public String getKycTestData() {
-        return kycTestData;
-    }
-
-    public String getKycTestData2() {
-        return kycTestData2;
-    }
-
-    public String getMonnifyApiKey() {
-        return monnifyApiKey;
-    }
-
-    public String getMonnifyBaseUrl() {
-        return monnifyBaseUrl;
-    }
-
-    public String getMonnifyApiSecretKey() {
-        return monnifyApiSecretKey;
-    }
-
-    public String getMonnifyCreateAccountUrl() {
-        return monnifyCreateAccountUrl;
-    }
-
-    public String getMonnifySignInUrl() {
-        return monnifySignInUrl;
-    }
-
-    public String getMonnifyGetReservedAccountUrl() {
-        return monnifyGetReservedAccountUrl;
-    }
 
 }
