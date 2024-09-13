@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.util.List;
 
 @Getter @Setter
-public class CreateRequest {
+public class CreateReservedAccountRequest {
     @JsonProperty
     private String accountName; //
     @JsonProperty
@@ -26,7 +26,6 @@ public class CreateRequest {
     private String nin;//
     @JsonProperty
     private Boolean getAllAvailableBanks;
-    private String token;
     @JsonProperty(value = "preferredBanks")
     private List<String> preferredBanks;
 }
