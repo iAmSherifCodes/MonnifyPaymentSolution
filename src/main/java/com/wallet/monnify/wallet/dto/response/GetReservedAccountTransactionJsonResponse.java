@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.List;
+
 @Setter @Getter @ToString
-public class GetBalanceResponseData {
-    @JsonProperty(value = "responseBody")
-    private BalanceResponse response;
+public class GetReservedAccountTransactionJsonResponse {
+    @JsonProperty(value = "content")
+    private List<GetReservedAccountTransactionResponse> response;
 }
