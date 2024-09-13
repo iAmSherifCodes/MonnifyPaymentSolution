@@ -1,11 +1,13 @@
 package com.wallet.monnify.user.services;
 
-import com.wallet.monnify.config.AppConfigs;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wallet.monnify.config.AppConfig;
 import com.wallet.monnify.user.data.model.User;
 import com.wallet.monnify.user.data.repository.UserRepository;
 import com.wallet.monnify.user.dto.kyc.BvnRequestObject;
 import com.wallet.monnify.user.dto.kyc.BvnResponseData;
-import com.wallet.monnify.user.dto.kyc.BvnResponseObject;
 import com.wallet.monnify.user.dto.request.CreateUserRequest;
 import com.wallet.monnify.user.dto.request.SignInRequest;
 import com.wallet.monnify.user.dto.response.AccessTokenData;
@@ -21,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.util.Base64;
 
 @Service @Slf4j @AllArgsConstructor
@@ -28,7 +31,8 @@ public class UserImplementation implements IUser {
 
 
     private final UserRepository userRepository;
-    private final AppConfigs appConfig;
+    private final AppConfig appConfig;
+    private final ObjectMapper objectMapper;
 
     @Override
     public CreateUserResponse createUser(CreateUserRequest createUserRequest) throws Exception {
@@ -45,24 +49,25 @@ public class UserImplementation implements IUser {
 
         userRepository.save(newUser);
 
-        CreateUserResponse createUserResponse = new CreateUserResponse();
-        createUserResponse.setMessage("Hi "+ responseEntity.getFirstName() +"! Sign Up Successful, Please proceed to sign in");
-
-        log.info("{{}} ::", responseEntity.getFirstName());
+        CreateUserResponse createUserResponse = CreateUserResponse
+                                                .builder()
+                                                .message("Hi "+ responseEntity.getFirstName() +"! Sign Up Successful, Please proceed to sign in")
+                                                .build();
         return createUserResponse;
     }
 
     private static User populateNewUser(String email, String password, String bvn, BvnResponseData responseEntity) {
-        User newUser = new User();
-        newUser.setEmail(email);
-        newUser.setPassword(password);
-        newUser.setBvn(bvn);
-        newUser.setFirstName(responseEntity.getFirstName());
-        newUser.setLastName(responseEntity.getLastName());
-        return newUser;
+        return User
+                .builder()
+                .email(email)
+                .password(password)
+                .bvn(bvn)
+                .firstName(responseEntity.getFirstName())
+                .lastName(responseEntity.getLastName())
+                .build();
     }
 
-    private static BvnResponseData getUserDataFromBvn(String bvn, String token, String url) {
+    private BvnResponseData getUserDataFromBvn(String bvn, String token, String url) {
         String id = bvn;
         BvnRequestObject bvnRequestObject = new BvnRequestObject(id, true);
         RestTemplate restTemplate = new RestTemplate();
@@ -70,10 +75,18 @@ public class UserImplementation implements IUser {
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         httpHeaders.set("token", token);
         HttpEntity<BvnRequestObject> httpEntity = new HttpEntity<>(bvnRequestObject, httpHeaders);
-        BvnResponseObject responseEntity = restTemplate.postForObject(url, httpEntity, BvnResponseObject.class);
-
-        assert responseEntity != null;
-        return responseEntity.getData();
+        String responseEntity = restTemplate.postForObject(url, httpEntity, String.class);
+        log.info("{{}}", responseEntity);
+        try{
+            JsonNode rootNode = objectMapper.readTree(responseEntity);
+            JsonNode responseBody = rootNode.path("data");
+            JsonParser parser = objectMapper.treeAsTokens(responseBody);
+            BvnResponseData bvnResponseData = objectMapper.readValue(parser, BvnResponseData.class);
+            log.info("{{}}", bvnResponseData.toString());
+            return  bvnResponseData;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -92,7 +105,7 @@ public class UserImplementation implements IUser {
         SignInResponse signInResponse = new SignInResponse();
         signInResponse.setToken(apiRequest.getAccessToken());
         signInResponse.setExpiresIn(apiRequest.getExpiresIn());
-        foundUser.setToken(apiRequest().getAccessToken());
+        foundUser.setApiToken(apiRequest().getAccessToken());
         userRepository.save(foundUser);
 
         return signInResponse;
