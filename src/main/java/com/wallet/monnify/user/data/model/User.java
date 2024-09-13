@@ -1,14 +1,21 @@
 package com.wallet.monnify.user.data.model;
 
 import com.wallet.monnify.wallet.data.model.Account;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Getter @Document(value = "users") @Setter
-public class User {
+import java.io.Serial;
+import java.io.Serializable;
+
+@Getter @Builder
+@Document(value = "users") @Setter
+public class User implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @Id
     private String id;
     private String username;
@@ -19,7 +26,6 @@ public class User {
     private String email;
     private String bvn;
     private String nin;
-    private String phone;
-    private String token;
+    private String apiToken;
     private Account account;
 }
