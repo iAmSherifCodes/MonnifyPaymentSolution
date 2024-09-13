@@ -1,92 +1,68 @@
 package com.wallet.monnify.wallet.services;
 
-import com.wallet.monnify.config.AppConfigs;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wallet.monnify.config.AppConfig;
 import com.wallet.monnify.user.data.model.User;
 import com.wallet.monnify.user.data.repository.UserRepository;
 import com.wallet.monnify.utils.Constants;
 import com.wallet.monnify.wallet.data.model.Account;
+import com.wallet.monnify.wallet.data.model.Transaction;
 import com.wallet.monnify.wallet.data.repository.AccountRepository;
-import com.wallet.monnify.wallet.dto.request.CreateRequest;
-import com.wallet.monnify.wallet.dto.response.BalanceResponse;
-import com.wallet.monnify.wallet.dto.response.CreateResponse;
-import com.wallet.monnify.wallet.dto.response.GetBalanceResponseData;
-import com.wallet.monnify.wallet.dto.response.ReservedAccountResponse;
+import com.wallet.monnify.wallet.data.repository.TransactionRepository;
+import com.wallet.monnify.wallet.dto.request.CreateReservedAccountRequest;
+import com.wallet.monnify.wallet.dto.response.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Base64;
-import java.util.Optional;
-import java.util.Random;
+import java.io.IOException;
+import java.util.*;
+
+import static com.wallet.monnify.utils.Constants.ACCOUNT_NOT_FOUND;
+import static com.wallet.monnify.utils.Constants.USER_NOT_FOUND;
 
 @Service @AllArgsConstructor @Slf4j
 public class AccountImplementation implements IAccount{
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
-    private final AppConfigs appConfig;
+    private final AppConfig appConfig;
+    private final ObjectMapper objectMapper;
+    private final ModelMapper modelMapper;
+    private final TransactionRepository transactionRepository;
 
 
     @Override
-    public ReservedAccountResponse createReservedAccount(CreateRequest createRequest) throws Exception {
-        createRequest.setAccountReference(generateAccountReference());
-        createRequest.setContractCode(appConfig.getMonnifyContractCode());
-        CreateResponse responseObject;
+    public CreateReservedAccountResponse createReservedAccount(CreateReservedAccountRequest createReservedAccountRequest) throws Exception {
+        createReservedAccountRequest.setAccountReference(generateAccountReference());
+        createReservedAccountRequest.setContractCode(appConfig.getMonnifyContractCode());
+        User foundUser = userRepository.findUserByEmail(createReservedAccountRequest.getCustomerEmail()).orElseThrow(()-> new Exception(USER_NOT_FOUND));
         try{
-            responseObject = makeApiRequest(createRequest, appConfig.getMonnifyCreateAccountUrl());
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+            httpHeaders.setBearerAuth(foundUser.getApiToken());
+            HttpEntity<Object> httpEntity = new HttpEntity<>(createReservedAccountRequest, httpHeaders);
+            String responseObject = restTemplate.postForObject(appConfig.getMonnifyCreateAccountUrl(), httpEntity, String.class);
+            CreateReservedAccountResponse  newReservedAccount = readJsonAndConvertToCreateReservedAccountResponse(responseObject);
+
+            Account newAccount = objectMapper.convertValue(newReservedAccount, Account.class);
+            Account savedAccount = accountRepository.save(newAccount);
+
+            foundUser.setAccount(savedAccount);
+            userRepository.save(foundUser);
+            return newReservedAccount;
         } catch (Exception e){
             throw new Exception(e.getMessage()+ "::From Api Call");
         }
 
-        assert responseObject != null;
-
-        String accountNumber = responseObject.getResponseBody().getAccounts().get(0).getAccountNumber();
-        String bankName = responseObject.getResponseBody().getAccounts().get(0).getBankName();
-
-        Account newAccount = buildAccount(responseObject, accountNumber, bankName);
-        Account savedAccount = accountRepository.save(newAccount);
-
-        Optional<User> foundUser = userRepository.findUserByEmail(createRequest.getCustomerEmail());
-        foundUser.ifPresent(user -> {
-            user.setAccount(savedAccount);
-            userRepository.save(user);
-        });
-
-        log.info("{{}}::", responseObject.getResponseBody());
-        return responseObject.getResponseBody();
-    }
-
-    private static CreateResponse makeApiRequest(CreateRequest createRequest, String url) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-        httpHeaders.setBearerAuth(createRequest.getToken());
-        HttpEntity<Object> httpEntity = new HttpEntity<>(createRequest, httpHeaders);
-        log.info("{{}}::", httpEntity.toString());
-        CreateResponse responseObject = restTemplate.postForObject(url, httpEntity, CreateResponse.class);
-        return responseObject;
-    }
-
-    private static Account buildAccount(CreateResponse responseObject, String accountNumber, String bankName) {
-        Account newAccount = new Account();
-        newAccount.setAccountName(responseObject.getResponseBody().getAccountName());
-        newAccount.setAccountNumber(accountNumber);
-        newAccount.setAccountReference(responseObject.getResponseBody().getAccountReference());
-        newAccount.setBankName(bankName);
-        newAccount.setCreatedOn(responseObject.getResponseBody().getCreatedOn());
-        newAccount.setReservedAccountType(responseObject.getResponseBody().getReservedAccountType());
-        newAccount.setCurrencyCode(responseObject.getResponseBody().getCurrencyCode());
-        newAccount.setCustomerEmail(responseObject.getResponseBody().getCustomerEmail());
-        newAccount.setCustomerName(responseObject.getResponseBody().getCustomerName());
-        newAccount.setCollectionChannel(responseObject.getResponseBody().getCollectionChannel());
-        newAccount.setReservationReference(responseObject.getResponseBody().getReservationReference());
-        newAccount.setStatus(responseObject.getResponseBody().getStatus());
-        newAccount.setBvn(responseObject.getResponseBody().getBvn());
-        newAccount.setNin(responseObject.getResponseBody().getNin());
-
-        return newAccount;
     }
 
     private String generateAccountReference(){
@@ -107,54 +83,67 @@ public class AccountImplementation implements IAccount{
         return randomString.toString();
     }
 
-    @Override
-    public ReservedAccountResponse getReservedAccount(String accountReference, String apiToken) throws Exception {
+    @Override @Cacheable(value = "get-reserved-account", key = "#accountReference")
+    public CreateReservedAccountResponse getReservedAccount(String accountReference) throws Exception {
+        User foundUser = userRepository.findUserByAccount_AccountReference(accountReference).orElseThrow(()-> new Exception(ACCOUNT_NOT_FOUND));
+        log.info("USER{{}}", foundUser);
+
         try {
-            return makeApiRequest(accountReference, apiToken, appConfig.getMonnifyGetReservedAccountUrl());
+            String url = appConfig.getMonnifyGetReservedAccountUrl() + accountReference;
+            String responseObject = makeGetReservedAccountRequestToMonnifyApi(foundUser.getApiToken(), url);
+            return readJsonAndConvertToCreateReservedAccountResponse(responseObject);
         }  catch (Exception e){
             throw new Exception(e.getMessage()+ "::From Api Call");
         }
     }
 
-    private static ReservedAccountResponse makeApiRequest(String accountReference, String apiToken, String baseUrl) {
-        String url = baseUrl + accountReference;
+    private CreateReservedAccountResponse readJsonAndConvertToCreateReservedAccountResponse(String responseObject) {
+        try{
+            JsonNode rootNode = objectMapper.readTree(responseObject);
+            JsonNode responseBody = rootNode.path("responseBody");
+            JsonParser parser = objectMapper.treeAsTokens(responseBody);
+            CreateReservedAccountResponse createReservedAccountResponse = objectMapper.readValue(parser, CreateReservedAccountResponse.class);
+            log.info("{{}}", createReservedAccountResponse.toString());
+            return createReservedAccountResponse;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // TODO
+    // implement caching using Redis
+    @Override  @Cacheable(value = "get-reserved-account-transactions", key = "#accountReference")
+    public List<GetReservedAccountTransactionResponse> getReservedAccountTransactions(String accountReference, int pageNumber, int pageSize) throws Exception {
+        User foundUser = userRepository.findUserByAccount_AccountReference(accountReference).orElseThrow(()-> new Exception(ACCOUNT_NOT_FOUND));
+
+        String url = appConfig.getMonnifyGetReservedAccountTransactionUrl()+"?accountReference="+accountReference+"&page="+pageNumber+"&size="+pageSize;
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.setBearerAuth(foundUser.getApiToken());
+        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
+        String responseObject = restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class).getBody();
+        Map<String, Object> responseMap = objectMapper.readValue(responseObject, new TypeReference<>() {});
+
+        Map<String, Object> responseBody = (Map<String, Object>)responseMap.get("responseBody");
+        List<GetReservedAccountTransactionResponse> transactions = objectMapper.convertValue(responseBody.get("content"), new TypeReference<>() {});
+
+        transactions.forEach(transaction -> {
+            Transaction newTransaction = modelMapper.map(transaction, Transaction.class);
+            transactionRepository.save(newTransaction);
+        });
+
+        return transactions;
+    }
+
+    private String makeGetReservedAccountRequestToMonnifyApi(String apiToken, String url) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         httpHeaders.setBearerAuth(apiToken);
         HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
-        log.info("{{}}::", httpEntity.toString());
-        CreateResponse responseObject = restTemplate.exchange(url, HttpMethod.GET, httpEntity, CreateResponse.class).getBody();
-        assert responseObject != null;
-        return responseObject.getResponseBody();
+        log.info("{{}}", httpEntity);
+        return restTemplate.exchange(url, HttpMethod.GET, httpEntity, String.class).getBody();
     }
 
-    @Override
-    public BalanceResponse getAccountBalance(String accountNumber, String apiToken) throws Exception {
-//        Account foundAccount = accountRepository.findByAccountNumber(accountBalanceRequest.getAccountNumber()).orElseThrow(()->new Exception("Account Number not found"));
-        String url = ""+accountNumber;
-//        RestTemplate restTemplate = new RestTemplate();
-//        HttpHeaders httpHeaders = new HttpHeaders();
-//        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-//        httpHeaders.setBearerAuth(accountBalanceRequest.getToken());
-//        HttpEntity<Object> httpEntity = new HttpEntity<>(httpHeaders);
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-        String apiKey = "";
-        String clientSecret = "";
-        String credentials = apiKey + ":" + clientSecret;
-        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
-        httpHeaders.setBasicAuth(encodedCredentials);
-        log.info("{{}}::", httpHeaders.toString());
-
-        HttpEntity<?> httpEntity = new HttpEntity<>("{}", httpHeaders);
-        GetBalanceResponseData responseObject = restTemplate.exchange(url, HttpMethod.GET, httpEntity, GetBalanceResponseData.class).getBody();
-        assert responseObject != null;
-        log.info("{{}}::", responseObject.getResponse().toString());
-//        foundAccount.setBalance(responseObject.getResponse().getBalance());
-//        accountRepository.save(foundAccount);
-        return responseObject.getResponse();
-    }
 }
