@@ -1,16 +1,21 @@
 package com.wallet.monnify.wallet.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.wallet.monnify.wallet.data.model.BankAccount;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
 @Getter @Setter @ToString
-public class ReservedAccountResponse {
+public class CreateReservedAccountResponse implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @JsonProperty(value = "contractCode")
     private String contractCode;
     @JsonProperty(value = "accountReference")
@@ -27,6 +32,4 @@ public class ReservedAccountResponse {
     private String reservedAccountType;
     private String status;
     private String createdOn;
-    private String bvn;
-    private String nin;
 }
