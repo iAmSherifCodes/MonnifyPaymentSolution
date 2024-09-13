@@ -1,13 +1,13 @@
 package com.wallet.monnify.wallet.services;
 
-import com.wallet.monnify.wallet.dto.request.CreateRequest;
-import com.wallet.monnify.wallet.dto.request.GetAccountBalanceRequest;
-import com.wallet.monnify.wallet.dto.request.GetReservedAccountRequest;
-import com.wallet.monnify.wallet.dto.response.BalanceResponse;
-import com.wallet.monnify.wallet.dto.response.ReservedAccountResponse;
+import com.wallet.monnify.wallet.dto.request.CreateReservedAccountRequest;
+import com.wallet.monnify.wallet.dto.response.*;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface IAccount {
-    ReservedAccountResponse createReservedAccount(CreateRequest createRequest) throws Exception;
-    ReservedAccountResponse getReservedAccount (String accountReference, String apiToken) throws Exception;
-    BalanceResponse getAccountBalance(String accountNumber, String apiToken) throws Exception;
+    CreateReservedAccountResponse createReservedAccount(CreateReservedAccountRequest createReservedAccountRequest) throws Exception;
+    CreateReservedAccountResponse getReservedAccount (String accountReference) throws Exception;
+    List<GetReservedAccountTransactionResponse> getReservedAccountTransactions (String accountReference, int pageNumber, int pageSize) throws Exception;
 }
