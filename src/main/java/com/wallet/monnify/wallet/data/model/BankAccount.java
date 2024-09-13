@@ -5,9 +5,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Setter
 @Getter @ToString
-public class BankAccount {
+public class BankAccount implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @JsonProperty(value = "bankCode")
     private String bankCode;
     private String accountNumber;
