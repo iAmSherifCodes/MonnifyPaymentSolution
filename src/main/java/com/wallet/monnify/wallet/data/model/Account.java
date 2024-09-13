@@ -6,15 +6,19 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
 @Document(value = "accounts")
 @Data
-public class Account {
+public class Account implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     @Id
     private String id;
-    private String accountName;//
+    private String accountName;
     private String accountNumber;
     private String bankName;
     private BigDecimal balance;
@@ -29,7 +33,7 @@ public class Account {
     private List<BankAccount> accounts;
     private String collectionChannel;
     private String reservationReference;
-    private String reservedAccountType;//
+    private String reservedAccountType;
     private String status;
     private String createdOn;//
     private String bvn;
