@@ -1,6 +1,6 @@
-# Welcome to MonnifyWalletApplication
+# Monnify Payment Solution
 
-This is a wallet application built with Java SpringBoot.
+This is a payment solution built with Java SpringBoot.
 The application is integrated with Monnify (by Monniepoint) API for transactions.
 
 The API documentation is intended for developers who  want to interact with the application's backend services.
